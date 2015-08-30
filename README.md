@@ -1,5 +1,5 @@
-# Gemfury Quickstart
-Gemfury is a maven plugin for publishing private artifacts to gemfury repository during the deploy phase.
+# gemfury-maven-plugin Quickstart
+gemfury-maven-plugin is a maven plugin for publishing private artifacts to gemfury repository during the deploy phase.
 
 Add the plugin to your maven pom.
 ##Maven
