@@ -9,7 +9,7 @@ Add the plugin to your maven pom.
     <plugin>
       <groupId>uk.co.solong</groupId>
       <artifactId>gemfury-maven-plugin</artifactId>
-      <version>0.0.1-SNAPSHOT</version>
+      <version>0.0.2</version>
       <executions>
         <execution>
           <id>execution1</id>
