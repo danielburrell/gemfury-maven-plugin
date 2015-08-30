@@ -4,7 +4,7 @@
     <artifactId>gemfury-maven-plugin</artifactId>
     <packaging>maven-plugin</packaging>
     <version>0.0.2-SNAPSHOT</version>
-    <name>gemfury Maven Mojo</name>
+    <name>Gemfury Maven Mojo</name>
     <description>A maven plugin for publishing debian artifacts into a gemfury repository</description>
     <url>http://maven.apache.org</url>
     <licenses>
@@ -246,9 +246,9 @@
         </dependency>
     </dependencies>
     <scm>
-        <url>https://github.com/danielburrell/gemfury</url>
-        <connection>scm:git:git://github.com/danielburrell/gemfury.git</connection>
-        <developerConnection>scm:git:git@github.com:danielburrell/gemfury.git</developerConnection>
+        <url>https://github.com/danielburrell/gemfury-maven-plugin</url>
+        <connection>scm:git:git://github.com/danielburrell/gemfury-maven-plugin.git</connection>
+        <developerConnection>scm:git:git@github.com:danielburrell/gemfury-maven-plugin.git</developerConnection>
         <tag>HEAD</tag>
     </scm>
 </project>
