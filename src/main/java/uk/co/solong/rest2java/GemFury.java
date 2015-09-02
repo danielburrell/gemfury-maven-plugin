@@ -10,7 +10,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.Validate;
+import org.apache.commons.lang3.Validate;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.config.CookieSpecs;
