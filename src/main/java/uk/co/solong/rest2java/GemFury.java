@@ -10,6 +10,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.Validate;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.config.CookieSpecs;
@@ -29,6 +30,10 @@ import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
+import org.springframework.retry.RetryCallback;
+import org.springframework.retry.RetryContext;
+import org.springframework.retry.policy.SimpleRetryPolicy;
+import org.springframework.retry.support.RetryTemplate;
 
 @Mojo(name = "gemfury", defaultPhase = LifecyclePhase.DEPLOY)
 public class GemFury extends AbstractMojo {
@@ -39,47 +44,67 @@ public class GemFury extends AbstractMojo {
     @Parameter
     private URL gemfuryUrl;
 
+    @Parameter(defaultValue = "false")
+    private Boolean ignoreHttpsCertificateWarnings;
+
     @Parameter(defaultValue = "${project}", readonly = true, required = true)
     private MavenProject project;
 
     public void execute() throws MojoExecutionException {
         getLog().info("Publishing debian artifacts to gemfury repository");
 
-        // provide SSLContext that allows self-signed certificate
+        RetryTemplate t = new RetryTemplate();
+        t.setRetryPolicy(new SimpleRetryPolicy());
         try {
-            SSLContextBuilder builder = new SSLContextBuilder();
-            builder.loadTrustMaterial(null, new TrustSelfSignedStrategy());
-            SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(builder.build());
-            CloseableHttpClient httpclient = HttpClients.custom().setSSLSocketFactory(sslsf).build();
+            Validate.isTrue(gemfuryUrl.toString().contains("@"), "Malformed gemfury URL, expected @ in url");
+            Validate.isTrue(gemfuryUrl.toString().contains("//"), "Malformed gemfury URL, expected https:// in url");
+            t.execute(new RetryCallback<Void, Throwable>() {
+                @Override
+                public Void doWithRetry(RetryContext context) throws Throwable {
+                    CloseableHttpClient httpclient = null;
+                    if (ignoreHttpsCertificateWarnings) {
+                        SSLContextBuilder builder = new SSLContextBuilder();
+                        builder.loadTrustMaterial(null, new TrustSelfSignedStrategy());
+                        SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(builder.build());
+                        httpclient = HttpClients.custom().setSSLSocketFactory(sslsf).build();
+                    } else {
+                        httpclient = HttpClients.custom().build();
+                    }
 
-            RequestConfig config = RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).setRedirectsEnabled(true).setAuthenticationEnabled(true).build();
-            HttpPost httppost = new HttpPost(gemfuryUrl.toString());
-            httppost.setConfig(config);
+                    RequestConfig config = RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).setRedirectsEnabled(true).setAuthenticationEnabled(true)
+                            .build();
+                    HttpPost httppost = new HttpPost(gemfuryUrl.toString());
+                    httppost.setConfig(config);
 
-            String[] secretSplit = gemfuryUrl.toString().split("@");
-            String[] secretSplitAgaint = secretSplit[0].split("//");
-            String secret = secretSplitAgaint[1];
-            httppost.setHeader("Authorization", "Basic " + Base64.getEncoder().encodeToString(secret.getBytes()));
-            FileBody packagea = new FileBody(new File(debFile.getPath()));
+                    String[] secretSplit = gemfuryUrl.toString().split("@");
+                    String[] secretSplitAgaint = secretSplit[0].split("//");
+                    String secret = secretSplitAgaint[1];
+                    httppost.setHeader("Authorization", "Basic " + Base64.getEncoder().encodeToString(secret.getBytes()));
+                    FileBody packagea = new FileBody(new File(debFile.getPath()));
 
-            MultipartEntityBuilder buil = MultipartEntityBuilder.create();
-            HttpEntity reqEntity = buil.addPart(FormBodyPartBuilder.create("package", packagea).build()).build();
+                    MultipartEntityBuilder buil = MultipartEntityBuilder.create();
+                    HttpEntity reqEntity = buil.addPart(FormBodyPartBuilder.create("package", packagea).build()).build();
 
-            httppost.setEntity(reqEntity);
+                    httppost.setEntity(reqEntity);
 
-            HttpResponse response = httpclient.execute(httppost);
-            HttpEntity entity = response.getEntity();
-            InputStream is = entity.getContent();
-            String result = IOUtils.toString(is, "UTF-8");
-            getLog().debug(result);
-            IOUtils.closeQuietly(is);
-            getLog().info("Gemfury publication success.");
+                    HttpResponse response = httpclient.execute(httppost);
+                    HttpEntity entity = response.getEntity();
+                    InputStream is = entity.getContent();
+                    String result = IOUtils.toString(is, "UTF-8");
+                    getLog().debug(result);
+                    IOUtils.closeQuietly(is);
+                    getLog().info("Gemfury publication success.");
+                    return null;
+                }
+            });
         } catch (IOException | NoSuchAlgorithmException | KeyStoreException | KeyManagementException e) {
             getLog().info("Gemfury publication failed.");
             getLog().error(e);
             throw new RuntimeException(e);
-        } finally {
-
+        } catch (Throwable e) {
+            getLog().info("Gemfury publication failed.");
+            getLog().error(e);
+            throw new RuntimeException(e);
         }
 
     }
