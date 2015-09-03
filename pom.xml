@@ -3,7 +3,7 @@
     <groupId>uk.co.solong</groupId>
     <artifactId>gemfury-maven-plugin</artifactId>
     <packaging>maven-plugin</packaging>
-    <version>0.0.4-SNAPSHOT</version>
+    <version>0.0.4</version>
     <name>Gemfury Maven Mojo</name>
     <description>A maven plugin for publishing debian artifacts into a gemfury repository</description>
     <url>http://maven.apache.org</url>
@@ -249,6 +249,6 @@
         <url>https://github.com/danielburrell/gemfury-maven-plugin</url>
         <connection>scm:git:git://github.com/danielburrell/gemfury-maven-plugin.git</connection>
         <developerConnection>scm:git:git@github.com:danielburrell/gemfury-maven-plugin.git</developerConnection>
-        <tag>HEAD</tag>
+        <tag>gemfury-maven-plugin-0.0.4</tag>
     </scm>
 </project>
