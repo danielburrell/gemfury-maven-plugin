@@ -9,13 +9,14 @@ Add the plugin to your maven pom.
     <plugin>
       <groupId>uk.co.solong</groupId>
       <artifactId>gemfury-maven-plugin</artifactId>
-      <version>0.0.2</version>
+      <version>0.0.4</version>
       <executions>
         <execution>
           <id>execution1</id>
           <phase>deploy</phase>
           <configuration>
             <gemfuryUrl>https://SomeSecretToken@repo.fury.io/youraddress/</gemfuryUrl>
+            <ignoreHttpsCertificateWarnings>true</ignoreHttpsCertificateWarnings>
           </configuration>
           <goals>
             <goal>gemfury</goal>
