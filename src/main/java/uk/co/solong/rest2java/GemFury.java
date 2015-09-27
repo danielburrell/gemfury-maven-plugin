@@ -32,6 +32,7 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.springframework.retry.RetryCallback;
 import org.springframework.retry.RetryContext;
+import org.springframework.retry.RetryPolicy;
 import org.springframework.retry.backoff.BackOffPolicy;
 import org.springframework.retry.backoff.FixedBackOffPolicy;
 import org.springframework.retry.policy.SimpleRetryPolicy;
@@ -59,7 +60,9 @@ public class GemFury extends AbstractMojo {
         FixedBackOffPolicy backOffPolicy = new FixedBackOffPolicy();
         backOffPolicy.setBackOffPeriod(30000L);
         t.setBackOffPolicy(backOffPolicy);
-        t.setRetryPolicy(new SimpleRetryPolicy());
+        SimpleRetryPolicy s = new SimpleRetryPolicy();
+        s.setMaxAttempts(99);
+        t.setRetryPolicy(s);
         try {
             Validate.isTrue(gemfuryUrl.toString().contains("@"), "Malformed gemfury URL, expected @ in url");
             Validate.isTrue(gemfuryUrl.toString().contains("//"), "Malformed gemfury URL, expected https:// in url");
@@ -99,6 +102,10 @@ public class GemFury extends AbstractMojo {
                     getLog().info(result);
                     getLog().info("StatusCode:"+response.getStatusLine().getStatusCode());
                     IOUtils.closeQuietly(is);
+                    if (response.getStatusLine().getStatusCode() != 200) {
+                        getLog().warn("Gemfury was unavailable. Retrying");
+                        throw new GemfuryNotAvailable();
+                    }
                     getLog().info("Gemfury publication success.");
                     return null;
                 }
