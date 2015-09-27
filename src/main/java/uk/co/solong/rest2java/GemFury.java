@@ -32,6 +32,8 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.springframework.retry.RetryCallback;
 import org.springframework.retry.RetryContext;
+import org.springframework.retry.backoff.BackOffPolicy;
+import org.springframework.retry.backoff.FixedBackOffPolicy;
 import org.springframework.retry.policy.SimpleRetryPolicy;
 import org.springframework.retry.support.RetryTemplate;
 
@@ -54,6 +56,9 @@ public class GemFury extends AbstractMojo {
         getLog().info("Publishing debian artifacts to gemfury repository");
 
         RetryTemplate t = new RetryTemplate();
+        FixedBackOffPolicy backOffPolicy = new FixedBackOffPolicy();
+        backOffPolicy.setBackOffPeriod(30000L);
+        t.setBackOffPolicy(backOffPolicy);
         t.setRetryPolicy(new SimpleRetryPolicy());
         try {
             Validate.isTrue(gemfuryUrl.toString().contains("@"), "Malformed gemfury URL, expected @ in url");
