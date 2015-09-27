@@ -91,7 +91,8 @@ public class GemFury extends AbstractMojo {
                     HttpEntity entity = response.getEntity();
                     InputStream is = entity.getContent();
                     String result = IOUtils.toString(is, "UTF-8");
-                    getLog().debug(result);
+                    getLog().info(result);
+                    getLog().info("StatusCode:"+response.getStatusLine().getStatusCode());
                     IOUtils.closeQuietly(is);
                     getLog().info("Gemfury publication success.");
                     return null;
