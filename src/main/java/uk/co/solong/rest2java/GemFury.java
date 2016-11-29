@@ -64,7 +64,7 @@ public class GemFury extends AbstractMojo {
         s.setMaxAttempts(99);
         t.setRetryPolicy(s);
         try {
-            Validate.isTrue(gemfuryUrl.toString().contains("@"), "Malformed gemfury URL, expected @ in url");
+            //Validate.isTrue(gemfuryUrl.toString().contains("@"), "Malformed gemfury URL, expected @ in url");
             Validate.isTrue(gemfuryUrl.toString().contains("//"), "Malformed gemfury URL, expected https:// in url");
             t.execute(new RetryCallback<Void, Throwable>() {
                 @Override
