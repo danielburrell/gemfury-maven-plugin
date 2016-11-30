@@ -48,6 +48,14 @@ public class GemFury extends AbstractMojo {
     @Parameter
     private String token;
 
+    public Boolean getIgnoreHttpsCertificateWarnings() {
+        return ignoreHttpsCertificateWarnings;
+    }
+
+    public void setIgnoreHttpsCertificateWarnings(Boolean ignoreHttpsCertificateWarnings) {
+        this.ignoreHttpsCertificateWarnings = ignoreHttpsCertificateWarnings;
+    }
+
     @Parameter(defaultValue = "false")
     private Boolean ignoreHttpsCertificateWarnings;
 
@@ -56,7 +64,7 @@ public class GemFury extends AbstractMojo {
 
     public void execute() throws MojoExecutionException {
         getLog().info("Publishing debian artifacts to gemfury repository. Token Present: "+((token != null && token.length() > 1)? "Yes":"No"));
-        getLog().debug("URL Template"+ gemfuryUrl.toString());
+        getLog().debug("URL Template "+ gemfuryUrl.toString());
         RetryTemplate t = new RetryTemplate();
         FixedBackOffPolicy backOffPolicy = new FixedBackOffPolicy();
         backOffPolicy.setBackOffPeriod(30000L);
@@ -64,9 +72,8 @@ public class GemFury extends AbstractMojo {
         SimpleRetryPolicy s = new SimpleRetryPolicy();
         s.setMaxAttempts(99);
         t.setRetryPolicy(s);
+        Validate.isTrue(gemfuryUrl.toString().contains("secret-token"), "Malformed gemfury URL, expected the word secret-token where the secret-token should be inserted");
         try {
-            //Validate.isTrue(gemfuryUrl.toString().contains("@"), "Malformed gemfury URL, expected @ in url");
-            Validate.isTrue(gemfuryUrl.toString().contains("secret-token"), "Malformed gemfury URL, expected the word secret-token where the secret-token should be inserted");
             final String secretUrl = gemfuryUrl.toString().replace("secret-token", token);
 
             t.execute(new RetryCallback<Void, Throwable>() {
@@ -87,8 +94,6 @@ public class GemFury extends AbstractMojo {
                     HttpPost httppost = new HttpPost(secretUrl.toString());
                     httppost.setConfig(config);
 
-
-                    httppost.setHeader("Authorization", "Basic " + Base64.getEncoder().encodeToString(token.getBytes()));
                     FileBody packagea = new FileBody(new File(debFile.getPath()));
 
                     MultipartEntityBuilder buil = MultipartEntityBuilder.create();
