@@ -32,8 +32,6 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.springframework.retry.RetryCallback;
 import org.springframework.retry.RetryContext;
-import org.springframework.retry.RetryPolicy;
-import org.springframework.retry.backoff.BackOffPolicy;
 import org.springframework.retry.backoff.FixedBackOffPolicy;
 import org.springframework.retry.policy.SimpleRetryPolicy;
 import org.springframework.retry.support.RetryTemplate;
@@ -44,8 +42,11 @@ public class GemFury extends AbstractMojo {
     @Parameter(defaultValue = "${project.build.directory}/${project.artifactId}.deb")
     private File debFile;
 
-    @Parameter
+    @Parameter(defaultValue = "https://push.fury.io/secret-token/")
     private URL gemfuryUrl;
+
+    @Parameter
+    private String token;
 
     @Parameter(defaultValue = "false")
     private Boolean ignoreHttpsCertificateWarnings;
@@ -54,8 +55,8 @@ public class GemFury extends AbstractMojo {
     private MavenProject project;
 
     public void execute() throws MojoExecutionException {
-        getLog().info("Publishing debian artifacts to gemfury repository");
-
+        getLog().info("Publishing debian artifacts to gemfury repository. Token Present: "+((token != null && token.length() > 1)? "Yes":"No"));
+        getLog().debug("URL Template"+ gemfuryUrl.toString());
         RetryTemplate t = new RetryTemplate();
         FixedBackOffPolicy backOffPolicy = new FixedBackOffPolicy();
         backOffPolicy.setBackOffPeriod(30000L);
@@ -65,7 +66,9 @@ public class GemFury extends AbstractMojo {
         t.setRetryPolicy(s);
         try {
             //Validate.isTrue(gemfuryUrl.toString().contains("@"), "Malformed gemfury URL, expected @ in url");
-            Validate.isTrue(gemfuryUrl.toString().contains("//"), "Malformed gemfury URL, expected https:// in url");
+            Validate.isTrue(gemfuryUrl.toString().contains("secret-token"), "Malformed gemfury URL, expected the word secret-token where the secret-token should be inserted");
+            final String secretUrl = gemfuryUrl.toString().replace("secret-token", token);
+
             t.execute(new RetryCallback<Void, Throwable>() {
                 @Override
                 public Void doWithRetry(RetryContext context) throws Throwable {
@@ -81,13 +84,11 @@ public class GemFury extends AbstractMojo {
 
                     RequestConfig config = RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).setRedirectsEnabled(true).setAuthenticationEnabled(true)
                             .build();
-                    HttpPost httppost = new HttpPost(gemfuryUrl.toString());
+                    HttpPost httppost = new HttpPost(secretUrl.toString());
                     httppost.setConfig(config);
 
-                    String[] secretSplit = gemfuryUrl.toString().split("@");
-                    String[] secretSplitAgaint = secretSplit[0].split("//");
-                    String secret = secretSplitAgaint[1];
-                    httppost.setHeader("Authorization", "Basic " + Base64.getEncoder().encodeToString(secret.getBytes()));
+
+                    httppost.setHeader("Authorization", "Basic " + Base64.getEncoder().encodeToString(token.getBytes()));
                     FileBody packagea = new FileBody(new File(debFile.getPath()));
 
                     MultipartEntityBuilder buil = MultipartEntityBuilder.create();
@@ -146,4 +147,11 @@ public class GemFury extends AbstractMojo {
         this.gemfuryUrl = gemfuryUrl;
     }
 
+    public String getToken() {
+        return token;
+    }
+
+    public void setToken(String token) {
+        this.token = token;
+    }
 }
